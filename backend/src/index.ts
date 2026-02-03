@@ -10,22 +10,39 @@ import { parseExpense } from "./services/aiService.js";
 
 const app = express();
 app.use(cors());
-app.use(express.json()); // Built-in JSON parser
+app.use(express.json());
 
 initDB();
 
-// POST: Add new expense via AI parsing
+// 1. POST: Add new expense
 app.post("/api/expenses", async (req, res) => {
   const { input } = req.body;
+
+  if (!input) {
+    return res.status(400).json({ success: false, error: "Input is required" });
+  }
+
   try {
     const parsed = await parseExpense(input);
-    if (parsed.error)
-      return res.status(400).json({ success: false, error: parsed.error });
+
+    // Check if AI failed to find an amount
+    if (!parsed || !parsed.amount || parsed.error) {
+      return res.status(400).json({
+        success: false,
+        error: "Could not parse expense. Please include an amount.",
+      });
+    }
 
     const result = createExpense({ ...parsed, original_input: input });
+
     res.status(201).json({
       success: true,
-      expense: { id: result.lastInsertRowid, ...parsed },
+      expense: {
+        id: result.lastInsertRowid,
+        ...parsed,
+        original_input: input,
+        created_at: new Date().toISOString(), // Ensures time displays correctly on mobile
+      },
     });
   } catch (error) {
     res
@@ -34,17 +51,27 @@ app.post("/api/expenses", async (req, res) => {
   }
 });
 
-// GET: Retrieve all expenses
+// 2. GET: Retrieve all expenses
 app.get("/api/expenses", (req, res) => {
-  res.json({ success: true, expenses: getAllExpenses() });
+  try {
+    res.json({ success: true, expenses: getAllExpenses() });
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Failed to fetch expenses" });
+  }
 });
 
-// DELETE: Remove an expense
+// 3. DELETE: Remove an expense
 app.delete("/api/expenses/:id", (req, res) => {
-  const success = deleteExpense(parseInt(req.params.id));
-  success
-    ? res.json({ success: true })
-    : res.status(404).json({ success: false });
+  try {
+    const success = deleteExpense(parseInt(req.params.id));
+    if (success) {
+      res.json({ success: true, message: "Expense deleted successfully" });
+    } else {
+      res.status(404).json({ success: false, error: "Expense not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Delete failed" });
+  }
 });
 
 app.listen(3000, () => console.log("Backend running on http://localhost:3000"));
