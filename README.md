@@ -4,11 +4,11 @@ A full-stack expense tracking app that uses AI to parse natural language input.
 
 Built by: Abhinav Anand  
 GitHub: [iamabhi9v](https://github.com/iamabhi9v)  
-Time to build: [1.5 Hours] (with AI assistance)
+Time to build: [2.0 Hours] (with AI assistance)
 
 ## 🎥 Demo
 
-[Link to your screen recording]
+[Click here to watch the Video Demo](./assets/AI Expense Tracker.webm)
 
 ## 🛠️ Tech Stack
 
